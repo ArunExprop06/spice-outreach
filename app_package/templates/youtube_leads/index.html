@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}YouTube Leads - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <i class="bi bi-youtube me-2" style="color:#ff0000;font-size:1.75rem"></i>
+    <h4 class="mb-0">YouTube Lead Finder</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#smartTab" type="button">
+                    <i class="bi bi-stars text-warning me-1"></i> Smart Search
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#manualTab" type="button">
+                    <i class="bi bi-link-45deg me-1"></i> Paste URL
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Smart Search Tab -->
+            <div class="tab-pane fade show active" id="smartTab">
+                <div class="card mb-3">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-stars text-warning"></i> AI-Powered Smart Search</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('youtube_leads.smart_scan') }}" id="smartForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">What are you selling / looking for?</label>
+                                <input type="text" name="topic" class="form-control form-control-lg"
+                                       placeholder="e.g., poultry, spices, packaging machines, solar panels..." required>
+                                <div class="form-text">Just type your product/industry — AI will find relevant videos and scan comments for leads automatically</div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Videos to scan</label>
+                                    <select name="max_videos" class="form-select">
+                                        <option value="2">2 per query (fast)</option>
+                                        <option value="3" selected>3 per query</option>
+                                        <option value="5">5 per query (thorough)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Comments per video</label>
+                                    <select name="comments_per_video" class="form-select">
+                                        <option value="30">30 (fast)</option>
+                                        <option value="50" selected>50</option>
+                                        <option value="100">100 (thorough)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-danger mt-3" id="smartBtn">
+                                <i class="bi bi-rocket-takeoff me-1"></i> Find Leads
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual URL Tab -->
+            <div class="tab-pane fade" id="manualTab">
+                <div class="card mb-3">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0"><i class="bi bi-search"></i> Scan Video Comments</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('youtube_leads.scan') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">YouTube Video URL</label>
+                                <input type="text" name="video_url" class="form-control form-control-lg"
+                                       placeholder="https://www.youtube.com/watch?v=..." required>
+                                <div class="form-text">Paste any YouTube video URL — we'll scan comments for leads</div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Keyword Filter <span class="text-muted">(optional)</span></label>
+                                    <input type="text" name="keyword_filter" class="form-control"
+                                           placeholder="e.g., price, supplier, interested">
+                                    <div class="form-text">Only show comments containing this keyword</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Max Comments</label>
+                                    <select name="max_results" class="form-select">
+                                        <option value="50">50</option>
+                                        <option value="100" selected>100</option>
+                                        <option value="200">200</option>
+                                        <option value="500">500</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-danger mt-3">
+                                <i class="bi bi-play-circle me-1"></i> Scan Comments
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-3 border-warning">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-stars text-warning"></i> Smart Search</h6>
+            </div>
+            <div class="card-body small">
+                <p class="mb-2">Just type your <strong>product or industry</strong> and the system will:</p>
+                <ol class="mb-0">
+                    <li class="mb-1">AI generates <strong>3 search queries</strong> optimized for finding buyer comments</li>
+                    <li class="mb-1">Searches YouTube and finds <strong>relevant videos</strong></li>
+                    <li class="mb-1">Scans all comments across videos for <strong>emails, phones, buying intent</strong></li>
+                    <li class="mb-1">Scores and ranks leads — <strong>save hot ones to Contacts</strong></li>
+                </ol>
+                <hr>
+                <small class="text-muted">Works best with Gemini AI key (Settings). Without it, uses basic query templates.</small>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-tag"></i> Scoring Logic</h6>
+            </div>
+            <div class="card-body small">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr><td>Email found</td><td class="text-end"><span class="badge bg-success">+50</span></td></tr>
+                    <tr><td>Phone found</td><td class="text-end"><span class="badge bg-success">+40</span></td></tr>
+                    <tr><td>Business keyword</td><td class="text-end"><span class="badge bg-primary">+15-20</span></td></tr>
+                    <tr><td>High engagement (5+ likes)</td><td class="text-end"><span class="badge bg-info">+10</span></td></tr>
+                    <tr><td>Recent (&lt; 30 days)</td><td class="text-end"><span class="badge bg-info">+10</span></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-link-45deg"></i> Supported URLs</h6>
+            </div>
+            <div class="card-body small text-muted">
+                <code class="d-block mb-1">youtube.com/watch?v=...</code>
+                <code class="d-block mb-1">youtu.be/...</code>
+                <code class="d-block mb-1">youtube.com/shorts/...</code>
+                <code class="d-block">youtube.com/embed/...</code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('smartForm').addEventListener('submit', function() {
+    const btn = document.getElementById('smartBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Searching YouTube & scanning comments...';
+});
+</script>
+{% endblock %}

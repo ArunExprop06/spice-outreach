@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}Candidates: {{ search.search_query }} — Job Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+.msg-template-card { border-left: 3px solid #6366f1; }
+.candidate-actions .btn { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('job_tracker.candidates_dashboard') }}" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h3 class="mb-0">{{ search.search_query }}</h3>
+            <small class="text-muted">
+                {{ search.location }} &middot;
+                {{ search.total_found }} candidate(s) found &middot;
+                {% for p in search.platform_list|default(['linkedin']) %}
+                    {% if p == 'linkedin' %}<i class="bi bi-linkedin" style="color:#0a66c2"></i>
+                    {% elif p == 'facebook' %}<i class="bi bi-facebook" style="color:#1877f2"></i>
+                    {% elif p == 'instagram' %}<i class="bi bi-instagram" style="color:#e4405f"></i>
+                    {% endif %}
+                {% endfor %}
+                &middot;
+                {{ search.created_at.strftime('%d %b %Y, %I:%M %p') }}
+            </small>
+        </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <form method="post" action="{{ url_for('job_tracker.find_all_candidate_contacts', search_id=search.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-info" title="Search emails & phones for all candidates">
+                <i class="bi bi-person-lines-fill me-1"></i> Find All Contacts
+            </button>
+        </form>
+        {% if 'linkedin' in search.platform_list|default(['linkedin']) %}
+        <form method="post" action="{{ url_for('job_tracker.find_all_candidate_facebook', search_id=search.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-primary" title="Find Facebook profiles for LinkedIn candidates">
+                <i class="bi bi-facebook me-1"></i> Find All Facebook
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('job_tracker.export_candidates_csv', search_id=search.id) }}"
+           class="btn btn-outline-success">
+            <i class="bi bi-download me-1"></i> Export CSV
+        </a>
+        <form method="post" action="{{ url_for('job_tracker.save_all_candidates', search_id=search.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-primary">
+                <i class="bi bi-people me-1"></i> Save All to Contacts
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<!-- LinkedIn Message Template (only if LinkedIn results exist) -->
+{% set has_linkedin = results|selectattr('platform', 'equalto', 'linkedin')|list|length > 0 %}
+{% if has_linkedin %}
+<div class="card msg-template-card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0"><i class="bi bi-chat-quote text-primary me-2"></i>LinkedIn Message Template</h6>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#templateEditor">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </button>
+        </div>
+        <div class="collapse" id="templateEditor">
+            <textarea id="msgTemplate" class="form-control form-control-sm mb-2" rows="4">Hi {name}, I came across your profile and was impressed by your experience as {title} at {company}. I'd love to connect and discuss a potential opportunity. Looking forward to hearing from you!</textarea>
+            <div class="text-muted small">
+                Placeholders: <code>{name}</code> <code>{title}</code> <code>{company}</code> <code>{location}</code> — Auto-replaced when you click "Message"
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    {% for r in results %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    {% if r.platform == 'facebook' %}
+                    <span class="badge" style="background-color:#1877f2">
+                        <i class="bi bi-facebook me-1"></i> Facebook
+                    </span>
+                    {% elif r.platform == 'instagram' %}
+                    <span class="badge" style="background-color:#e4405f">
+                        <i class="bi bi-instagram me-1"></i> Instagram
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background-color:#0a66c2">
+                        <i class="bi bi-linkedin me-1"></i> LinkedIn
+                    </span>
+                    {% endif %}
+                    <div class="d-flex gap-1">
+                        {% if r.email %}<span class="badge bg-danger bg-opacity-10 text-danger" title="Email found"><i class="bi bi-envelope-fill"></i></span>{% endif %}
+                        {% if r.is_saved %}<span class="badge bg-success"><i class="bi bi-check-lg"></i> Saved</span>{% endif %}
+                    </div>
+                </div>
+
+                <h6 class="card-title mb-1">{{ r.name or 'Unknown' }}</h6>
+
+                {% if r.title %}
+                <p class="text-primary mb-1 small"><i class="bi bi-briefcase me-1"></i>{{ r.title }}</p>
+                {% endif %}
+
+                {% if r.company %}
+                <p class="mb-1 small"><i class="bi bi-building me-1"></i>{{ r.company }}</p>
+                {% endif %}
+
+                {% if r.location %}
+                <p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>{{ r.location }}</p>
+                {% endif %}
+
+                <!-- Contact Details -->
+                {% if r.email or r.phone or r.facebook_url or r.instagram_url %}
+                <div class="mt-2 p-2 bg-light rounded">
+                    {% if r.email %}
+                    <div class="small"><i class="bi bi-envelope-fill text-danger me-1"></i>
+                        <a href="mailto:{{ r.email }}">{{ r.email }}</a>
+                    </div>
+                    {% endif %}
+                    {% if r.phone %}
+                    <div class="small"><i class="bi bi-telephone-fill text-success me-1"></i>
+                        <a href="tel:{{ r.phone }}">{{ r.phone }}</a>
+                    </div>
+                    {% endif %}
+                    {% if r.facebook_url and r.platform != 'facebook' %}
+                    <div class="small"><i class="bi bi-facebook text-primary me-1"></i>
+                        <a href="{{ r.facebook_url }}" target="_blank">{{ r.facebook_url|truncate(40) }}</a>
+                    </div>
+                    {% endif %}
+                    {% if r.instagram_url and r.platform != 'instagram' %}
+                    <div class="small"><i class="bi bi-instagram me-1" style="color:#e4405f"></i>
+                        <a href="{{ r.instagram_url }}" target="_blank">{{ r.instagram_url|truncate(40) }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if r.snippet %}
+                <div class="small text-muted mt-2 mb-0" style="max-height:100px; overflow-y:auto;">{{ r.snippet }}</div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent py-2">
+                <div class="d-flex gap-1 candidate-actions flex-wrap">
+                    {% if r.platform == 'linkedin' and r.linkedin_url %}
+                    <!-- LinkedIn: Connect + Message -->
+                    <a href="{{ r.linkedin_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-primary" title="Open profile & Connect">
+                        <i class="bi bi-person-plus-fill me-1"></i> Connect
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-primary msg-btn"
+                            data-name="{{ r.name or '' }}"
+                            data-title="{{ r.title or '' }}"
+                            data-company="{{ r.company or '' }}"
+                            data-location="{{ r.location or '' }}"
+                            data-url="{{ r.linkedin_url }}"
+                            title="Copy message & open LinkedIn">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Message
+                    </button>
+                    {% elif r.platform == 'facebook' and r.facebook_url %}
+                    <!-- Facebook: Open profile -->
+                    <a href="{{ r.facebook_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm" style="background-color:#1877f2; color:#fff" title="Open Facebook profile">
+                        <i class="bi bi-facebook me-1"></i> Open
+                    </a>
+                    {% elif r.platform == 'instagram' and r.instagram_url %}
+                    <!-- Instagram: Open profile -->
+                    <a href="{{ r.instagram_url }}" target="_blank" rel="noopener"
+                       class="btn btn-sm" style="background-color:#e4405f; color:#fff" title="Open Instagram profile">
+                        <i class="bi bi-instagram me-1"></i> Open
+                    </a>
+                    {% endif %}
+
+                    <!-- Find Contact (all platforms) -->
+                    {% if not r.email %}
+                    <form method="post" action="{{ url_for('job_tracker.find_candidate_contact_details', result_id=r.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-info" title="Find email & phone">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Find Facebook (only for LinkedIn candidates) -->
+                    {% if r.platform == 'linkedin' %}
+                        {% if not r.facebook_url %}
+                        <form method="post" action="{{ url_for('job_tracker.find_candidate_facebook_profile', result_id=r.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-primary" title="Find Facebook profile">
+                                <i class="bi bi-facebook"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <a href="{{ r.facebook_url }}" target="_blank" class="btn btn-sm btn-primary" title="Open Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if not r.is_saved %}
+                    <form method="post" action="{{ url_for('job_tracker.save_candidate_to_contacts', result_id=r.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-success" title="Save to Contacts">
+                            <i class="bi bi-bookmark-plus"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-people display-1 text-muted"></i>
+        <h5 class="mt-3">No candidates found</h5>
+        {% if search.error_message %}
+        <p class="text-danger">{{ search.error_message }}</p>
+        {% else %}
+        <p class="text-muted">Try a different search query or location.</p>
+        {% endif %}
+        <a href="{{ url_for('job_tracker.candidate_search') }}" class="btn btn-primary">
+            <i class="bi bi-search me-1"></i> New Search
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Message button: fill template with candidate data, copy to clipboard, open LinkedIn
+$('.msg-btn').on('click', function() {
+    var btn = $(this);
+    var template = $('#msgTemplate').val();
+    var msg = template
+        .replace(/\{name\}/g, btn.data('name') || 'there')
+        .replace(/\{title\}/g, btn.data('title') || 'your role')
+        .replace(/\{company\}/g, btn.data('company') || 'your company')
+        .replace(/\{location\}/g, btn.data('location') || '');
+
+    navigator.clipboard.writeText(msg).then(function() {
+        showToast('Message copied! Paste it on LinkedIn.', 'success');
+        // Open LinkedIn profile after short delay
+        setTimeout(function() {
+            window.open(btn.data('url'), '_blank');
+        }, 500);
+    }).catch(function() {
+        // Fallback: just open profile
+        prompt('Copy this message:', msg);
+        window.open(btn.data('url'), '_blank');
+    });
+});
+</script>
+{% endblock %}

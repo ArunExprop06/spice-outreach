@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Upload Brochure - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('brochures.list_brochures') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">Upload Brochure</h4>
+</div>
+
+<div class="card" style="max-width:600px">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label">File</label>
+                <input type="file" name="file" class="form-control" accept=".pdf,.png,.jpg,.jpeg" required>
+                <div class="form-text">Supported: PDF, PNG, JPG (max 16 MB)</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="is_default" class="form-check-input" id="isDefault">
+                <label class="form-check-label" for="isDefault">Set as default brochure for auto-sends</label>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-upload"></i> Upload
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

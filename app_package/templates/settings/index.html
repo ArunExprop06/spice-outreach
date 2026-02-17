@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}Settings - Krawlr{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">Settings</h4>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <!-- Sender Info -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-person-badge"></i> Sender Information</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="sender">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Your Name</label>
+                            <input type="text" name="sender_name" class="form-control"
+                                   value="{{ settings.sender_name }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" name="sender_company" class="form-control"
+                                   value="{{ settings.sender_company }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="sender_phone" class="form-control"
+                                   value="{{ settings.sender_phone }}">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SMTP Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-envelope"></i> SMTP Configuration (Email)</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="smtp">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">SMTP Host</label>
+                            <input type="text" name="smtp_host" class="form-control"
+                                   value="{{ settings.smtp_host }}" placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Port</label>
+                            <input type="text" name="smtp_port" class="form-control"
+                                   value="{{ settings.smtp_port }}" placeholder="587">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="smtp_username" class="form-control"
+                                   value="{{ settings.smtp_username }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Password {{ '(set)' if smtp_pwd_set else '' }}</label>
+                            <input type="password" name="smtp_password" class="form-control"
+                                   placeholder="{{ '********' if smtp_pwd_set else 'Enter password' }}">
+                            <div class="form-text">Leave blank to keep current</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">From Email</label>
+                            <input type="email" name="smtp_from_email" class="form-control"
+                                   value="{{ settings.smtp_from_email }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">From Name</label>
+                            <input type="text" name="smtp_from_name" class="form-control"
+                                   value="{{ settings.smtp_from_name }}">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- WhatsApp Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-whatsapp"></i> WhatsApp Configuration</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="whatsapp">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Mode</label>
+                            <select name="whatsapp_mode" class="form-select" id="waMode">
+                                <option value="pywhatkit" {{ 'selected' if settings.whatsapp_mode == 'pywhatkit' else '' }}>pywhatkit (Free/Testing)</option>
+                                <option value="twilio" {{ 'selected' if settings.whatsapp_mode == 'twilio' else '' }}>Twilio API (Production)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="twilioFields" class="row g-3 mt-1" style="{{ 'display:none' if settings.whatsapp_mode != 'twilio' else '' }}">
+                        <div class="col-md-4">
+                            <label class="form-label">Account SID {{ '(set)' if twilio_set else '' }}</label>
+                            <input type="password" name="twilio_account_sid" class="form-control"
+                                   placeholder="{{ '********' if twilio_set else 'Enter SID' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Auth Token</label>
+                            <input type="password" name="twilio_auth_token" class="form-control"
+                                   placeholder="Enter token">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">WhatsApp Number</label>
+                            <input type="text" name="twilio_whatsapp_number" class="form-control"
+                                   value="{{ settings.twilio_whatsapp_number }}" placeholder="+14155238886">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Google API Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-google"></i> Google Custom Search API</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="google">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">API Key {{ '(set)' if google_key_set else '' }}</label>
+                            <input type="password" name="google_api_key" class="form-control"
+                                   placeholder="{{ '********' if google_key_set else 'Enter API key' }}">
+                            <div class="form-text">Leave blank to keep current</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Custom Search Engine ID</label>
+                            <input type="text" name="google_cse_id" class="form-control"
+                                   value="{{ settings.google_cse_id }}" placeholder="e.g., abc123def456">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SerpAPI Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-search"></i> SerpAPI (LinkedIn People Search)</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="serpapi">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">API Key {{ '(set)' if serpapi_key_set else '' }}</label>
+                            <input type="password" name="serpapi_key" class="form-control"
+                                   placeholder="{{ '********' if serpapi_key_set else 'Enter SerpAPI key' }}">
+                            <div class="form-text">Get your key from <a href="https://serpapi.com" target="_blank">serpapi.com</a> (100 free searches/month). Used for finding LinkedIn candidates in Job Tracker.</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Gemini AI Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-stars text-warning"></i> Google Gemini AI</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="gemini">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">API Key {{ '(set)' if gemini_key_set else '' }}</label>
+                            <input type="password" name="gemini_api_key" class="form-control"
+                                   placeholder="{{ '********' if gemini_key_set else 'Enter Gemini API key' }}">
+                            <div class="form-text">Get your free key from <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a>. Used for AI Product Assistant (rating, suggestions, lead queries).</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- YouTube API Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-youtube" style="color:#ff0000"></i> YouTube Data API</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="youtube">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">API Key {{ '(set)' if youtube_key_set else '' }}</label>
+                            <input type="password" name="youtube_api_key" class="form-control"
+                                   placeholder="{{ '********' if youtube_key_set else 'Enter YouTube API key' }}">
+                            <div class="form-text">Get your free key from <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> &rarr; Enable YouTube Data API v3. Free tier: 10,000 units/day (~100 video scans).</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Facebook Config -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-facebook"></i> Facebook Integration</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="facebook">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Page ID</label>
+                            <input type="text" name="fb_page_id" class="form-control"
+                                   value="{{ settings.fb_page_id }}" placeholder="e.g., 123456789012345">
+                            <div class="form-text">Your Facebook Page numeric ID</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Page Access Token {{ '(set)' if fb_token_set else '' }}</label>
+                            <input type="password" name="fb_access_token" class="form-control"
+                                   placeholder="{{ '********' if fb_token_set else 'Enter access token' }}">
+                            <div class="form-text">Leave blank to keep current</div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <label class="form-label">Group IDs</label>
+                            <input type="text" name="fb_group_ids" class="form-control"
+                                   value="{{ settings.fb_group_ids }}" placeholder="e.g., 111111111,222222222,333333333">
+                            <div class="form-text">Comma-separated Facebook Group numeric IDs to scan for leads</div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Get these from <a href="https://developers.facebook.com/" target="_blank">developers.facebook.com</a>.
+                            Create an App → Add Facebook Login → Get Page Access Token.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Scheduler -->
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-clock"></i> Scheduler</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="section" value="scheduler">
+
+                    {% set job_configs = [
+                        ('daily_search', 'Daily Contact Search', 'Automatically find new leads via Google search'),
+                        ('daily_email', 'Daily Email Blast', 'Send brochure to new contacts via email'),
+                        ('daily_whatsapp', 'Daily WhatsApp Blast', 'Send intro message to new contacts via WhatsApp'),
+                        ('daily_facebook', 'Daily Facebook Scan', 'Auto-scan page comments and groups for enquiries')
+                    ] %}
+
+                    {% for job_name, label, desc in job_configs %}
+                    {% set job = jobs.get(job_name) %}
+                    <div class="border rounded p-3 mb-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="form-check">
+                                    <input type="checkbox" name="{{ job_name }}_enabled" class="form-check-input"
+                                           id="{{ job_name }}" {{ 'checked' if job and job.is_enabled else '' }}>
+                                    <label class="form-check-label fw-bold" for="{{ job_name }}">{{ label }}</label>
+                                </div>
+                                <small class="text-muted ms-4">{{ desc }}</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" name="{{ job_name }}_hour" class="form-control form-control-sm"
+                                       style="width:60px" min="0" max="23"
+                                       value="{{ job.schedule_hour if job else 9 }}" placeholder="HH">
+                                <span>:</span>
+                                <input type="number" name="{{ job_name }}_minute" class="form-control form-control-sm"
+                                       style="width:60px" min="0" max="59"
+                                       value="{{ job.schedule_minute if job else 0 }}" placeholder="MM">
+                            </div>
+                        </div>
+                        {% if job and job.last_run %}
+                        <small class="text-muted ms-4">Last run: {{ job.last_run.strftime('%Y-%m-%d %H:%M') }} - {{ job.last_status }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-2">Save Scheduler Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Info Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Setup Guide</h6>
+            </div>
+            <div class="card-body small">
+                <ol class="mb-0">
+                    <li class="mb-2">Fill in your <strong>Sender Information</strong></li>
+                    <li class="mb-2">Configure <strong>SMTP</strong> (Gmail: use App Password with smtp.gmail.com:587)</li>
+                    <li class="mb-2">Set up <strong>Google Custom Search</strong> for auto-finding contacts</li>
+                    <li class="mb-2">Choose <strong>WhatsApp mode</strong> (pywhatkit for testing, Twilio for production)</li>
+                    <li class="mb-2">Configure <strong>Scheduler</strong> for daily automation</li>
+                </ol>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Security</h6>
+            </div>
+            <div class="card-body small">
+                <p>All passwords and API keys are encrypted with Fernet (AES-128-CBC) before storing in the database.</p>
+                <p class="mb-0">The encryption key is stored in your <code>.env</code> file.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#waMode').on('change', function() {
+    $('#twilioFields').toggle(this.value === 'twilio');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Email - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Send Email</h4>
+    <div>
+        <span class="badge bg-info me-2">{{ sent_hour }}/{{ rate_hour }} this hour</span>
+        <span class="badge bg-info">{{ sent_day }}/{{ rate_day }} today</span>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('email.send') }}" id="emailForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Contact Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Contacts</label>
+                        <div class="border rounded p-2" style="max-height:200px;overflow-y:auto">
+                            <div class="mb-2">
+                                <input type="checkbox" id="selectAll" class="form-check-input me-1">
+                                <label for="selectAll" class="form-check-label fw-bold">Select All</label>
+                            </div>
+                            {% for c in contacts %}
+                            <div class="form-check">
+                                <input type="checkbox" name="contact_ids" value="{{ c.id }}"
+                                       class="form-check-input contact-check" id="c{{ c.id }}">
+                                <label class="form-check-label" for="c{{ c.id }}">
+                                    {{ c.company_name }} - {{ c.email }}
+                                </label>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">No contacts with email found.</p>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text"><span id="selectedCount">0</span> contacts selected</div>
+                    </div>
+
+                    <!-- Template Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Email Template</label>
+                        <select name="template" class="form-select" id="templateSelect">
+                            {% for key, name in templates.items() %}
+                            <option value="{{ key }}">{{ name }}</option>
+                            {% endfor %}
+                            <option value="custom">Custom Message</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom subject/body (hidden by default) -->
+                    <div id="customFields" style="display:none">
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            <input type="text" name="custom_subject" class="form-control"
+                                   placeholder="Use {{ '{{' }} company_name {{ '}}' }} for personalization">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Body (HTML)</label>
+                            <textarea name="custom_body" class="form-control" rows="6"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Brochure -->
+                    <div class="mb-3">
+                        <label class="form-label">Attach Brochure</label>
+                        <select name="brochure_id" class="form-select">
+                            <option value="">No attachment</option>
+                            {% for b in brochures %}
+                            <option value="{{ b.id }}" {{ 'selected' if b.is_default else '' }}>
+                                {{ b.original_filename }} {{ '(Default)' if b.is_default else '' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"
+                            onclick="return confirm('Send emails to selected contacts?')">
+                        <i class="bi bi-send"></i> Send Emails
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary ms-2" id="btnTestSmtp">
+                        <i class="bi bi-plug"></i> Test SMTP Connection
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Template Preview</h6>
+            </div>
+            <div class="card-body" id="previewPanel">
+                <p class="text-muted">Select a template to preview</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#selectAll').on('change', function() {
+    $('.contact-check').prop('checked', this.checked);
+    updateCount();
+});
+$('.contact-check').on('change', updateCount);
+
+function updateCount() {
+    $('#selectedCount').text($('.contact-check:checked').length);
+}
+
+$('#templateSelect').on('change', function() {
+    if (this.value === 'custom') {
+        $('#customFields').show();
+        $('#previewPanel').html('<p class="text-muted">Write your custom message</p>');
+    } else {
+        $('#customFields').hide();
+        // Load preview
+        $.post("{{ url_for('email.preview_template') }}", {
+            template: this.value,
+            csrf_token: '{{ csrf_token() }}'
+        }, function(data) {
+            $('#previewPanel').html(
+                '<strong>Subject:</strong> ' + data.subject +
+                '<hr>' + data.body
+            );
+        });
+    }
+}).trigger('change');
+
+$('#btnTestSmtp').on('click', function() {
+    var btn = $(this);
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Testing...');
+    $.post("{{ url_for('email.test_smtp') }}", {csrf_token: '{{ csrf_token() }}'}, function(data) {
+        if (data.success) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.error, 'danger');
+        }
+    }).always(function() {
+        btn.prop('disabled', false).html('<i class="bi bi-plug"></i> Test SMTP Connection');
+    });
+});
+</script>
+{% endblock %}

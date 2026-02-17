@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if tracker else 'Add' }} Tracker — Deal Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('deal_tracker.dashboard') }}" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h3 class="mb-0">{{ 'Edit' if tracker else 'Add New' }} Tracker</h3>
+        <small class="text-muted">{{ 'Update tracker settings' if tracker else 'Monitor classifieds for a search term' }}</small>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{{ url_for('deal_tracker.edit_tracker', tracker_id=tracker.id) if tracker else url_for('deal_tracker.add_tracker') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+                <!-- Search Query -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Search Query <span class="text-danger">*</span></label>
+                    <input type="text" name="search_query" class="form-control" required
+                           placeholder="e.g. Thar 2023, iPhone 15, Sofa set"
+                           value="{{ tracker.search_query if tracker else '' }}">
+                    <div class="form-text">What are you looking for on classifieds?</div>
+                </div>
+
+                <!-- Category -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="category" class="form-select">
+                        {% for val, label in categories %}
+                        <option value="{{ val }}" {% if tracker and tracker.category == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- City -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">City</label>
+                    <input type="text" name="city" class="form-control"
+                           placeholder="Mumbai"
+                           value="{{ tracker.city if tracker else 'Mumbai' }}">
+                </div>
+
+                <!-- Min Price -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Min Price (optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" name="min_price" class="form-control" id="minPriceInput"
+                               placeholder="e.g. 1000000"
+                               value="{{ tracker.min_price if tracker and tracker.min_price else '' }}">
+                    </div>
+                    <div class="form-text" id="minPriceHint"></div>
+                </div>
+
+                <!-- Max Price -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Max Price (optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" name="max_price" class="form-control" id="maxPriceInput"
+                               placeholder="e.g. 1500000"
+                               value="{{ tracker.max_price if tracker and tracker.max_price else '' }}">
+                    </div>
+                    <div class="form-text" id="maxPriceHint"></div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-text text-warning-emphasis"><i class="bi bi-info-circle"></i> Enter full amount in rupees. For example: 10 Lakh = <strong>1000000</strong>, 15 Lakh = <strong>1500000</strong></div>
+                </div>
+
+                <!-- Platforms -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Platforms</label>
+                    {% set active_platforms = [] %}
+                    {% if tracker and tracker.platforms %}
+                        {% set active_platforms = tracker.platforms | tojson %}
+                    {% endif %}
+                    {% for val, label in platforms %}
+                    <div class="form-check">
+                        <input type="checkbox" name="platforms" value="{{ val }}"
+                               class="form-check-input" id="plat_{{ val }}"
+                               {% if not tracker and val == 'serpapi' %}checked{% endif %}
+                               {% if tracker and val in tracker.platforms %}checked{% endif %}>
+                        <label class="form-check-label" for="plat_{{ val }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                    <div class="form-text mt-1">SerpAPI searches OLX + Quikr via Google (most reliable)</div>
+                </div>
+
+                <!-- WhatsApp Number -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">WhatsApp Alert Number</label>
+                    <input type="text" name="whatsapp_number" class="form-control"
+                           placeholder="+919876543210"
+                           value="{{ tracker.whatsapp_number if tracker else '' }}">
+                    <div class="form-text">Leave blank to skip alerts</div>
+                </div>
+
+                {% if tracker %}
+                <!-- Active toggle -->
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="isActive"
+                               {% if tracker.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">Active (included in daily checks)</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <hr>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> {{ 'Update Tracker' if tracker else 'Create Tracker' }}
+                </button>
+                <a href="{{ url_for('deal_tracker.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function formatLakh(val) {
+    if (!val) return '';
+    val = parseInt(val);
+    if (val >= 10000000) return (val / 10000000).toFixed(2) + ' Cr';
+    if (val >= 100000) return (val / 100000).toFixed(2) + ' Lakh';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+    return val.toString();
+}
+['min', 'max'].forEach(prefix => {
+    const input = document.getElementById(prefix + 'PriceInput');
+    const hint = document.getElementById(prefix + 'PriceHint');
+    if (input && hint) {
+        function update() {
+            const v = input.value;
+            hint.textContent = v ? '= ₹ ' + formatLakh(v) : '';
+        }
+        input.addEventListener('input', update);
+        update();
+    }
+});
+</script>
+{% endblock %}

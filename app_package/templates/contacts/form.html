@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if contact else 'Add' }} Contact - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('contacts.list_contacts') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">{{ 'Edit' if contact else 'Add New' }} Contact</h4>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                    <input type="text" name="company_name" class="form-control" required
+                           value="{{ contact.company_name if contact else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" name="contact_person" class="form-control"
+                           value="{{ contact.contact_person if contact else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ contact.email if contact else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control"
+                           value="{{ contact.phone if contact else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">WhatsApp</label>
+                    <input type="text" name="whatsapp" class="form-control"
+                           value="{{ contact.whatsapp if contact else '' }}" placeholder="+91XXXXXXXXXX">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Website</label>
+                    <input type="text" name="website" class="form-control"
+                           value="{{ contact.website if contact else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">City</label>
+                    <input type="text" name="city" class="form-control"
+                           value="{{ contact.city if contact else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">State</label>
+                    <input type="text" name="state" class="form-control"
+                           value="{{ contact.state if contact else '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Country</label>
+                    <input type="text" name="country" class="form-control"
+                           value="{{ contact.country if contact else 'India' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {{ 'selected' if contact and contact.category == cat else '' }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if contact %}
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {{ 'selected' if contact.status == s else '' }}>{{ s|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-12">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control" rows="3">{{ contact.notes if contact else '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> {{ 'Update' if contact else 'Add' }} Contact
+                </button>
+                <a href="{{ url_for('contacts.list_contacts') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if tracker else 'Add' }} Hotel Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('hotel_tracker.dashboard') }}" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h3 class="mb-0">{{ 'Edit' if tracker else 'Add New' }} Hotel Tracker</h3>
+        <small class="text-muted">{{ 'Update tracker settings' if tracker else 'Monitor hotel prices across platforms' }}</small>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{{ url_for('hotel_tracker.edit_tracker', tracker_id=tracker.id) if tracker else url_for('hotel_tracker.add_tracker') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+                <!-- Destination -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Destination <span class="text-danger">*</span></label>
+                    <input type="text" name="destination" class="form-control" required
+                           placeholder="e.g. Goa, Manali, Mumbai, Kerala"
+                           value="{{ tracker.destination if tracker else '' }}">
+                    <div class="form-text">City or region name</div>
+                </div>
+
+                <!-- Platforms -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Platforms</label>
+                    {% for val, label in platforms %}
+                    <div class="form-check">
+                        <input type="checkbox" name="platforms" value="{{ val }}"
+                               class="form-check-input" id="plat_{{ val }}"
+                               {% if not tracker and val == 'booking' %}checked{% endif %}
+                               {% if tracker and val in tracker.platforms %}checked{% endif %}>
+                        <label class="form-check-label" for="plat_{{ val }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- WhatsApp Number -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">WhatsApp Alert Number</label>
+                    <input type="text" name="whatsapp_number" class="form-control"
+                           placeholder="+919876543210"
+                           value="{{ tracker.whatsapp_number if tracker else '' }}">
+                    <div class="form-text">Leave blank to skip alerts</div>
+                </div>
+
+                <!-- Check-in -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Check-in Date</label>
+                    <input type="date" name="checkin" class="form-control"
+                           value="{{ tracker.checkin if tracker else '' }}">
+                    <div class="form-text">Leave blank for flexible dates</div>
+                </div>
+
+                <!-- Check-out -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Check-out Date</label>
+                    <input type="date" name="checkout" class="form-control"
+                           value="{{ tracker.checkout if tracker else '' }}">
+                </div>
+
+                <!-- Guests -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Guests</label>
+                    <input type="number" name="guests" class="form-control" min="1" max="10"
+                           value="{{ tracker.guests if tracker else 2 }}">
+                </div>
+
+                <!-- Rooms -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Rooms</label>
+                    <input type="number" name="rooms" class="form-control" min="1" max="10"
+                           value="{{ tracker.rooms if tracker else 1 }}">
+                </div>
+
+                <!-- Min Price -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Min Price/Night (optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" name="min_price" class="form-control"
+                               placeholder="e.g. 500"
+                               value="{{ tracker.min_price if tracker and tracker.min_price else '' }}">
+                    </div>
+                </div>
+
+                <!-- Max Price -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Max Price/Night (optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" name="max_price" class="form-control"
+                               placeholder="e.g. 5000"
+                               value="{{ tracker.max_price if tracker and tracker.max_price else '' }}">
+                    </div>
+                </div>
+
+                {% if tracker %}
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="isActive"
+                               {% if tracker.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">Active (included in daily checks)</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <hr>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> {{ 'Update Tracker' if tracker else 'Create Tracker' }}
+                </button>
+                <a href="{{ url_for('hotel_tracker.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

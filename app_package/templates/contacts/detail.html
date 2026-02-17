@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.company_name }} - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('contacts.list_contacts') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">{{ contact.company_name }}</h4>
+    <span class="badge bg-{{ 'primary' if contact.status == 'new' else 'warning' if contact.status == 'contacted' else 'info' if contact.status == 'responded' else 'success' if contact.status == 'converted' else 'secondary' }} ms-3">
+        {{ contact.status }}
+    </span>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <h6 class="mb-0">Contact Details</h6>
+                <a href="{{ url_for('contacts.edit_contact', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr><td class="text-muted" style="width:40%">Person</td><td>{{ contact.contact_person or '-' }}</td></tr>
+                    <tr><td class="text-muted">Email</td><td>{{ contact.email or '-' }}</td></tr>
+                    <tr><td class="text-muted">Phone</td><td>{{ contact.phone or '-' }}</td></tr>
+                    <tr><td class="text-muted">WhatsApp</td><td>{{ contact.whatsapp or '-' }}</td></tr>
+                    <tr><td class="text-muted">Website</td><td>{{ contact.website or '-' }}</td></tr>
+                    <tr><td class="text-muted">Location</td><td>{{ [contact.city, contact.state, contact.country]|select|join(', ') or '-' }}</td></tr>
+                    <tr><td class="text-muted">Category</td><td>{{ contact.category }}</td></tr>
+                    <tr><td class="text-muted">Source</td><td>{{ contact.source }}</td></tr>
+                    <tr><td class="text-muted">Added</td><td>{{ contact.created_at.strftime('%Y-%m-%d') }}</td></tr>
+                </table>
+                {% if contact.notes %}
+                <hr>
+                <p class="text-muted small mb-1">Notes:</p>
+                <p>{{ contact.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Message History</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Channel</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for msg in messages %}
+                        <tr>
+                            <td>
+                                {% if msg.channel == 'email' %}
+                                <span class="badge bg-success"><i class="bi bi-envelope"></i> Email</span>
+                                {% else %}
+                                <span class="badge bg-info"><i class="bi bi-whatsapp"></i> WhatsApp</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ msg.subject or msg.body_preview[:50] or '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if msg.status == 'sent' else 'danger' if msg.status == 'failed' else 'secondary' }}">
+                                    {{ msg.status }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">No messages sent yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

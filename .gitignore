@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+instance/
+*.db
+app_package/static/uploads/brochures/*
+app_package/static/uploads/csv_temp/*
+!.gitkeep
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+migrations/

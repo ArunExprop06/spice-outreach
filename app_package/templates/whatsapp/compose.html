@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}WhatsApp - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Send WhatsApp</h4>
+    <span class="badge bg-{{ 'success' if wa_mode == 'twilio' else 'warning' }}">
+        Mode: {{ wa_mode|upper }}
+    </span>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('whatsapp.send') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Contact Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Contacts</label>
+                        <div class="border rounded p-2" style="max-height:200px;overflow-y:auto">
+                            <div class="mb-2">
+                                <input type="checkbox" id="selectAll" class="form-check-input me-1">
+                                <label for="selectAll" class="form-check-label fw-bold">Select All</label>
+                            </div>
+                            {% for c in contacts %}
+                            <div class="form-check">
+                                <input type="checkbox" name="contact_ids" value="{{ c.id }}"
+                                       class="form-check-input contact-check" id="wc{{ c.id }}">
+                                <label class="form-check-label" for="wc{{ c.id }}">
+                                    {{ c.company_name }} - {{ c.whatsapp or c.phone }}
+                                </label>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">No contacts with phone/WhatsApp found.</p>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text"><span id="selectedCount">0</span> contacts selected</div>
+                    </div>
+
+                    <!-- Template Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Message Template</label>
+                        <select name="template" class="form-select" id="templateSelect">
+                            {% for key, name in templates.items() %}
+                            <option value="{{ key }}">{{ name }}</option>
+                            {% endfor %}
+                            <option value="custom">Custom Message</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom message -->
+                    <div id="customField" style="display:none">
+                        <div class="mb-3">
+                            <label class="form-label">Custom Message</label>
+                            <textarea name="custom_message" class="form-control" rows="6"
+                                      placeholder="Use {{ '{{' }} company_name {{ '}}' }}, {{ '{{' }} contact_person {{ '}}' }} for personalization"></textarea>
+                        </div>
+                    </div>
+
+                    {% if wa_mode == 'pywhatkit' %}
+                    <div class="alert alert-warning small">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>pywhatkit mode:</strong> WhatsApp Web must be open in Chrome. Each message opens a new tab.
+                        For production use, configure Twilio in Settings.
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-success"
+                            onclick="return confirm('Send WhatsApp messages to selected contacts?')">
+                        <i class="bi bi-whatsapp"></i> Send Messages
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Message Preview</h6>
+            </div>
+            <div class="card-body">
+                <div id="previewPanel" class="bg-light rounded p-3" style="white-space:pre-wrap;font-size:0.9rem">
+                    Select a template to preview
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#selectAll').on('change', function() {
+    $('.contact-check').prop('checked', this.checked);
+    updateCount();
+});
+$('.contact-check').on('change', updateCount);
+function updateCount() {
+    $('#selectedCount').text($('.contact-check:checked').length);
+}
+
+$('#templateSelect').on('change', function() {
+    if (this.value === 'custom') {
+        $('#customField').show();
+        $('#previewPanel').text('Write your custom message');
+    } else {
+        $('#customField').hide();
+        $.post("{{ url_for('whatsapp.preview_template') }}", {
+            template: this.value,
+            csrf_token: '{{ csrf_token() }}'
+        }, function(data) {
+            $('#previewPanel').text(data.body);
+        });
+    }
+}).trigger('change');
+</script>
+{% endblock %}

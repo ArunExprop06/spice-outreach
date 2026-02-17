@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Contacts - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Contacts</h4>
+    <div>
+        <a href="{{ url_for('contacts.export_csv') }}" class="btn btn-outline-secondary btn-sm me-1">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+        <a href="{{ url_for('contacts.import_csv') }}" class="btn btn-outline-primary btn-sm me-1">
+            <i class="bi bi-upload"></i> Import
+        </a>
+        <a href="{{ url_for('contacts.add_contact') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> Add Contact
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table id="contactsTable" class="table table-hover" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contacts %}
+                <tr>
+                    <td><a href="{{ url_for('contacts.detail', contact_id=c.id) }}">{{ c.company_name }}</a></td>
+                    <td>{{ c.contact_person }}</td>
+                    <td>{{ c.email }}</td>
+                    <td>{{ c.phone }}</td>
+                    <td>{{ c.city }}</td>
+                    <td><span class="badge bg-secondary">{{ c.category }}</span></td>
+                    <td>
+                        <span class="badge bg-{{ 'primary' if c.status == 'new' else 'warning' if c.status == 'contacted' else 'info' if c.status == 'responded' else 'success' if c.status == 'converted' else 'secondary' }}">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('contacts.edit_contact', contact_id=c.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('contacts.delete_contact', contact_id=c.id) }}" class="d-inline"
+                              onsubmit="return confirm('Delete this contact?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#contactsTable').DataTable({
+        pageLength: 25,
+        order: [[0, 'asc']],
+        responsive: true
+    });
+});
+</script>
+{% endblock %}

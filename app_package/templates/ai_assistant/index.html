@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-stars text-warning"></i> AI Product Assistant</h4>
+</div>
+
+{% if not has_gemini %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Gemini API key not configured.
+    <a href="{{ url_for('settings.settings_page') }}" class="alert-link">Go to Settings</a> to add your free Google Gemini API key.
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('ai_assistant.analyze_product') }}" id="analyzeForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Enter Your Product</label>
+                        <input type="text" name="product" class="form-control form-control-lg" id="productInput"
+                               placeholder="e.g., poultry HDPE sheet, turmeric powder, basmati rice..." required>
+                        <div class="form-text">AI will analyze market potential, suggest improvements, and generate lead-finding search queries.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quick Examples</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="poultry HDPE sheet">Poultry HDPE Sheet</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="turmeric powder organic">Turmeric Powder</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="red chilli powder">Red Chilli Powder</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="cardamom whole">Cardamom</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="cumin seeds export quality">Cumin Seeds</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary example-btn" data-product="packaging material food grade">Food Packaging</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="analyzeBtn" {{ 'disabled' if not has_gemini else '' }}>
+                        <i class="bi bi-stars me-1"></i> Analyze with AI
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">What AI Gives You</h6>
+            </div>
+            <div class="card-body small">
+                <div class="mb-2"><i class="bi bi-star-fill text-warning me-2"></i> <strong>Market Rating</strong> — Score out of 10</div>
+                <div class="mb-2"><i class="bi bi-lightbulb text-info me-2"></i> <strong>Improvement Tips</strong> — How to make your product better</div>
+                <div class="mb-2"><i class="bi bi-search text-primary me-2"></i> <strong>Lead Search Queries</strong> — Ready-to-use search queries</div>
+                <div class="mb-2"><i class="bi bi-building text-success me-2"></i> <strong>Target Industries</strong> — Who buys this product</div>
+                <div class="mb-2"><i class="bi bi-envelope text-danger me-2"></i> <strong>Email Pitch</strong> — Cold email template</div>
+                <div class="mb-0"><i class="bi bi-currency-rupee text-secondary me-2"></i> <strong>Pricing Insight</strong> — Market rate info</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('.example-btn').on('click', function() {
+    $('#productInput').val($(this).data('product'));
+});
+$('#analyzeForm').on('submit', function() {
+    $('#analyzeBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Analyzing...');
+});
+</script>
+{% endblock %}

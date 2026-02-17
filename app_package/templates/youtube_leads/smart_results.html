@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Smart Scan: {{ topic }} - YouTube Leads{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lead-card { border-left: 4px solid #e2e8f0; transition: all 0.2s; }
+    .lead-card.hot { border-left-color: #ef4444; }
+    .lead-card.warm { border-left-color: #f59e0b; }
+    .lead-card.cold { border-left-color: #94a3b8; }
+    .lead-card:hover { transform: translateY(-1px); }
+    .keyword-tag { background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 4px; font-size: 0.75rem; }
+    .contact-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; }
+    .contact-email { background: #dcfce7; color: #166534; }
+    .contact-phone { background: #dbeafe; color: #1e40af; }
+    .score-badge { min-width: 40px; text-align: center; }
+    .comment-text { white-space: pre-wrap; word-break: break-word; }
+    .video-pill { background: #f1f5f9; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; color: #475569; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('youtube_leads.index') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <i class="bi bi-stars text-warning me-2" style="font-size:1.5rem"></i>
+    <h4 class="mb-0">Smart Scan: <span class="text-primary">{{ topic }}</span></h4>
+</div>
+
+<!-- AI Queries Used -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <small class="text-muted fw-semibold me-2">AI Search Queries:</small>
+        {% for q in queries %}
+        <span class="badge bg-light text-dark border me-1">{{ q }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="stat-card card h-100">
+            <div class="card-body text-center py-3">
+                <div class="stat-icon mx-auto mb-2" style="background:#fee2e2;color:#dc2626">
+                    <i class="bi bi-play-btn"></i>
+                </div>
+                <h5 class="mb-0">{{ total_videos }}</h5>
+                <small class="text-muted">Videos Scanned</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card card h-100">
+            <div class="card-body text-center py-3">
+                <div class="stat-icon mx-auto mb-2" style="background:#e0e7ff;color:#4f46e5">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h5 class="mb-0">{{ total_comments }}</h5>
+                <small class="text-muted">Comments Scanned</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card card h-100">
+            <div class="card-body text-center py-3">
+                <div class="stat-icon mx-auto mb-2" style="background:#dcfce7;color:#16a34a">
+                    <i class="bi bi-person-check"></i>
+                </div>
+                <h5 class="mb-0">{{ leads_with_contact }}</h5>
+                <small class="text-muted">With Contact Info</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card card h-100">
+            <div class="card-body text-center py-3">
+                <div class="stat-icon mx-auto mb-2" style="background:#fef3c7;color:#d97706">
+                    <i class="bi bi-fire"></i>
+                </div>
+                <h5 class="mb-0">{{ high_intent_count }}</h5>
+                <small class="text-muted">High Intent</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Videos Scanned -->
+{% if video_infos %}
+<div class="card mb-3">
+    <div class="card-header bg-white py-2">
+        <h6 class="mb-0 small fw-semibold"><i class="bi bi-collection-play me-1"></i> Videos Scanned</h6>
+    </div>
+    <div class="card-body py-2">
+        <div class="row g-2">
+            {% for v in video_infos %}
+            <div class="col-md-4">
+                <div class="d-flex align-items-center p-2 rounded" style="background:#f8fafc">
+                    {% if v.thumbnail %}
+                    <img src="{{ v.thumbnail }}" alt="" class="rounded me-2" style="width:80px;height:45px;object-fit:cover">
+                    {% endif %}
+                    <div class="small" style="min-width:0">
+                        <div class="fw-semibold text-truncate">{{ v.title }}</div>
+                        <div class="text-muted" style="font-size:0.7rem">{{ v.channel }} &middot; {{ v.comments_scanned }} comments</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filters & Actions Bar -->
+<div class="card mb-3">
+    <div class="card-body py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold small">Filter:</span>
+            <button class="btn btn-sm btn-outline-secondary active" data-filter="all">All ({{ leads|length }})</button>
+            <button class="btn btn-sm btn-outline-success" data-filter="email">Has Email</button>
+            <button class="btn btn-sm btn-outline-primary" data-filter="phone">Has Phone</button>
+            <button class="btn btn-sm btn-outline-danger" data-filter="hot">Hot Leads (30+)</button>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="form-check form-check-inline mb-0">
+                <input class="form-check-input" type="checkbox" id="selectAll">
+                <label class="form-check-label small" for="selectAll">Select All</label>
+            </div>
+            <button class="btn btn-sm btn-primary" id="saveSelected" disabled>
+                <i class="bi bi-save me-1"></i> Save to Contacts (<span id="selectedCount">0</span>)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Lead Cards -->
+<div id="leadsContainer">
+{% if leads %}
+    {% for lead in leads %}
+    <div class="card lead-card mb-2 {% if lead.score >= 50 %}hot{% elif lead.score >= 30 %}warm{% else %}cold{% endif %}"
+         data-has-email="{{ '1' if lead.emails else '0' }}"
+         data-has-phone="{{ '1' if lead.phones else '0' }}"
+         data-score="{{ lead.score }}">
+        <div class="card-body py-2 px-3">
+            <div class="d-flex align-items-start">
+                <input type="checkbox" class="form-check-input lead-check me-3 mt-1"
+                       data-author="{{ lead.author }}"
+                       data-email="{{ lead.emails[0] if lead.emails else '' }}"
+                       data-phone="{{ lead.phones[0] if lead.phones else '' }}"
+                       data-notes="YouTube smart scan: {{ topic }} (score: {{ lead.score }})">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div>
+                            <strong>{{ lead.author }}</strong>
+                            {% if lead.author_channel %}
+                            <a href="{{ lead.author_channel }}" target="_blank" class="text-muted ms-1" title="Channel">
+                                <i class="bi bi-box-arrow-up-right" style="font-size:0.7rem"></i>
+                            </a>
+                            {% endif %}
+                            <small class="text-muted ms-2">
+                                <i class="bi bi-hand-thumbs-up"></i> {{ lead.likes }}
+                                &middot; {{ lead.published[:10] if lead.published else '' }}
+                            </small>
+                            {% if lead.video_title %}
+                            <span class="video-pill ms-2" title="{{ lead.video_title }}">
+                                <i class="bi bi-play-circle"></i> {{ lead.video_title[:30] }}{% if lead.video_title|length > 30 %}...{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <span class="badge score-badge {% if lead.score >= 50 %}bg-danger{% elif lead.score >= 30 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ lead.score }}
+                        </span>
+                    </div>
+                    <div class="comment-text small mb-1">{{ lead.text[:500] }}{% if lead.text|length > 500 %}...{% endif %}</div>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for e in lead.emails %}
+                        <span class="contact-tag contact-email"><i class="bi bi-envelope-fill me-1"></i>{{ e }}</span>
+                        {% endfor %}
+                        {% for p in lead.phones %}
+                        <span class="contact-tag contact-phone"><i class="bi bi-telephone-fill me-1"></i>{{ p }}</span>
+                        {% endfor %}
+                        {% for kw in lead.keywords %}
+                        <span class="keyword-tag">{{ kw }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-chat-left-dots" style="font-size:3rem"></i>
+        <p class="mt-2">No leads found for "{{ topic }}". Try a different topic or broader keyword.</p>
+    </div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter buttons
+document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.lead-card').forEach(card => {
+            let show = true;
+            if (filter === 'email') show = card.dataset.hasEmail === '1';
+            else if (filter === 'phone') show = card.dataset.hasPhone === '1';
+            else if (filter === 'hot') show = parseInt(card.dataset.score) >= 30;
+            card.style.display = show ? '' : 'none';
+        });
+    });
+});
+
+// Select all
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.lead-check').forEach(cb => {
+        if (cb.closest('.lead-card').style.display !== 'none') {
+            cb.checked = this.checked;
+        }
+    });
+    updateCount();
+});
+
+document.querySelectorAll('.lead-check').forEach(cb => {
+    cb.addEventListener('change', updateCount);
+});
+
+function updateCount() {
+    const checked = document.querySelectorAll('.lead-check:checked').length;
+    document.getElementById('selectedCount').textContent = checked;
+    document.getElementById('saveSelected').disabled = checked === 0;
+}
+
+// Save selected
+document.getElementById('saveSelected').addEventListener('click', function() {
+    const leads = [];
+    document.querySelectorAll('.lead-check:checked').forEach(cb => {
+        leads.push({
+            author: cb.dataset.author,
+            email: cb.dataset.email,
+            phone: cb.dataset.phone,
+            notes: cb.dataset.notes,
+        });
+    });
+    if (!leads.length) return;
+
+    fetch('{{ url_for("youtube_leads.save_leads") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({leads: leads})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showToast(data.error, 'danger');
+        } else {
+            showToast(data.message, 'success');
+            document.querySelectorAll('.lead-check:checked').forEach(cb => cb.checked = false);
+            updateCount();
+        }
+    })
+    .catch(() => showToast('Failed to save leads', 'danger'));
+});
+</script>
+{% endblock %}

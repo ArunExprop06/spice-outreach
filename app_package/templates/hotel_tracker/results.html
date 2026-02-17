@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Hotels: {{ tracker.destination }} — Hotel Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('hotel_tracker.dashboard') }}" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h3 class="mb-0">{{ tracker.destination }}</h3>
+            <small class="text-muted">
+                {% if tracker.checkin %}{{ tracker.checkin }} &rarr; {{ tracker.checkout }} &middot; {% endif %}
+                {{ tracker.guests }} guest(s), {{ tracker.rooms }} room(s)
+                {% if tracker.min_price or tracker.max_price %}
+                &middot; Budget: {{ tracker.min_price or '0' }} - {{ tracker.max_price or 'Any' }}
+                {% endif %}
+                &middot;
+                {% if tracker.last_checked %}
+                Last checked {{ tracker.last_checked.strftime('%d %b %Y, %I:%M %p') }}
+                {% else %}
+                Never checked
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    <form method="post" action="{{ url_for('hotel_tracker.check_single', tracker_id=tracker.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i> Check Now
+        </button>
+    </form>
+</div>
+
+{% if listings.items %}
+<div class="row g-3">
+    {% for listing in listings.items %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            {% if listing.image_url %}
+            <img src="{{ listing.image_url }}" class="card-img-top" alt="{{ listing.name }}"
+                 style="height:200px; object-fit:cover;"
+                 onerror="this.style.display='none'">
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-{{ 'primary' if listing.platform == 'booking' else 'danger' if listing.platform == 'oyo' else 'info' }}">
+                        {{ 'Booking.com' if listing.platform == 'booking' else listing.platform | upper }}
+                    </span>
+                    {% if listing.is_new %}
+                    <span class="badge bg-danger">NEW</span>
+                    {% endif %}
+                </div>
+                <h6 class="card-title">{{ listing.name }}</h6>
+                {% if listing.price %}
+                <p class="text-success fw-bold mb-1">{{ listing.price }} <small class="text-muted fw-normal">/night</small></p>
+                {% endif %}
+                {% if listing.rating %}
+                <p class="mb-1"><span class="badge bg-warning text-dark">{{ listing.rating }}</span></p>
+                {% endif %}
+                {% if listing.location %}
+                <p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>{{ listing.location }}</p>
+                {% endif %}
+                <small class="text-muted">Found {{ listing.found_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+            </div>
+            {% if listing.url %}
+            <div class="card-footer bg-transparent">
+                <a href="{{ listing.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> View on {{ 'Booking.com' if listing.platform == 'booking' else listing.platform | upper }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if listings.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not listings.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('hotel_tracker.results', tracker_id=tracker.id, page=listings.prev_num) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% for p in listings.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {% if p == listings.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('hotel_tracker.results', tracker_id=tracker.id, page=p) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not listings.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('hotel_tracker.results', tracker_id=tracker.id, page=listings.next_num) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h5 class="mt-3">No hotels found yet</h5>
+        <p class="text-muted">Click "Check Now" to search for hotels in "{{ tracker.destination }}".</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

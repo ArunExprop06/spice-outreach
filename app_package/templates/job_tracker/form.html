@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if tracker else 'Add' }} Job Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('job_tracker.dashboard') }}" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h3 class="mb-0">{{ 'Edit' if tracker else 'Add New' }} Job Tracker</h3>
+        <small class="text-muted">{{ 'Update tracker settings' if tracker else 'Monitor job portals for openings' }}</small>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{{ url_for('job_tracker.edit_tracker', tracker_id=tracker.id) if tracker else url_for('job_tracker.add_tracker') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+                <!-- Search Query -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Job Title / Keywords <span class="text-danger">*</span></label>
+                    <input type="text" name="search_query" class="form-control" required
+                           placeholder="e.g. Python Developer, Data Analyst, Marketing Manager"
+                           value="{{ tracker.search_query if tracker else '' }}">
+                    <div class="form-text">What job are you looking for?</div>
+                </div>
+
+                <!-- Category -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="category" class="form-select">
+                        {% for val, label in categories %}
+                        <option value="{{ val }}" {% if tracker and tracker.category == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- City -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">City</label>
+                    <input type="text" name="city" class="form-control"
+                           placeholder="Mumbai"
+                           value="{{ tracker.city if tracker else 'Mumbai' }}">
+                </div>
+
+                <!-- Experience -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Experience (optional)</label>
+                    <input type="text" name="experience" class="form-control"
+                           placeholder="e.g. 2-5 years"
+                           value="{{ tracker.experience if tracker else '' }}">
+                </div>
+
+                <!-- Job Type -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Job Type</label>
+                    <select name="job_type" class="form-select">
+                        {% for val, label in job_types %}
+                        <option value="{{ val }}" {% if tracker and tracker.job_type == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Platforms -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Platforms</label>
+                    {% for val, label in platforms %}
+                    <div class="form-check">
+                        <input type="checkbox" name="platforms" value="{{ val }}"
+                               class="form-check-input" id="plat_{{ val }}"
+                               {% if not tracker and val == 'linkedin' %}checked{% endif %}
+                               {% if tracker and val in tracker.platforms %}checked{% endif %}>
+                        <label class="form-check-label" for="plat_{{ val }}">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- WhatsApp Number -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">WhatsApp Alert Number</label>
+                    <input type="text" name="whatsapp_number" class="form-control"
+                           placeholder="+919876543210"
+                           value="{{ tracker.whatsapp_number if tracker else '' }}">
+                    <div class="form-text">Leave blank to skip alerts</div>
+                </div>
+
+                {% if tracker %}
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="isActive"
+                               {% if tracker.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">Active (included in daily checks)</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <hr>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i> {{ 'Update Tracker' if tracker else 'Create Tracker' }}
+                </button>
+                <a href="{{ url_for('job_tracker.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

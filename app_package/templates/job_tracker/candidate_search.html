@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Search Candidates — Job Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('job_tracker.candidates_dashboard') }}" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h3 class="mb-0">Search Candidates</h3>
+        <small class="text-muted">Find people on LinkedIn, Facebook &amp; Instagram via SerpAPI</small>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ url_for('job_tracker.candidate_search') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3">
+                        <!-- Search Query -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Search Keywords <span class="text-danger">*</span></label>
+                            <input type="text" name="search_query" class="form-control form-control-lg" required
+                                   placeholder="e.g. electrical diploma, python developer, marketing manager">
+                            <div class="form-text">Enter skills, qualifications, or job titles to search for people</div>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Location</label>
+                            <input type="text" name="location" class="form-control"
+                                   placeholder="Mumbai" value="Mumbai">
+                            <div class="form-text">City or region to focus the search on</div>
+                        </div>
+
+                        <!-- Number of Results -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Number of Results</label>
+                            <select name="num_results" class="form-select">
+                                <option value="10" selected>10 results</option>
+                                <option value="20">20 results</option>
+                                <option value="30">30 results</option>
+                                <option value="40">40 results (max)</option>
+                            </select>
+                            <div class="form-text">Per platform. More results use more SerpAPI credits</div>
+                        </div>
+
+                        <!-- Platform Selection -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Search Platforms</label>
+                            <div class="d-flex gap-3 flex-wrap">
+                                {% for value, label, icon, color in candidate_platforms %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="platforms"
+                                           value="{{ value }}" id="plat_{{ value }}"
+                                           {{ 'checked' if value == 'linkedin' else '' }}>
+                                    <label class="form-check-label" for="plat_{{ value }}">
+                                        <i class="bi {{ icon }} me-1" style="color: {{ color }}"></i> {{ label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">Select one or more platforms. Each uses a separate SerpAPI search.</div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-search me-1"></i> Search Candidates
+                        </button>
+                        <a href="{{ url_for('job_tracker.candidates_dashboard') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-lightbulb me-1"></i> Search Tips</h6>
+            </div>
+            <div class="card-body small">
+                <ul class="mb-0">
+                    <li class="mb-2"><strong>Be specific:</strong> "electrical diploma engineer" works better than just "electrical"</li>
+                    <li class="mb-2"><strong>Use qualifications:</strong> "B.Tech mechanical", "MBA marketing", "CA chartered accountant"</li>
+                    <li class="mb-2"><strong>Add experience:</strong> "senior python developer", "fresher civil engineer"</li>
+                    <li class="mb-2"><strong>Industry terms:</strong> "solar panel installer", "CNC machine operator"</li>
+                    <li class="mb-2"><strong>Multi-platform:</strong> Check Facebook/Instagram too — many professionals list skills on social profiles</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> About SerpAPI</h6>
+            </div>
+            <div class="card-body small">
+                <p>SerpAPI searches Google for profiles on LinkedIn, Facebook, and Instagram matching your keywords.</p>
+                <p><strong>Free tier:</strong> 100 searches/month (each platform = 1 search)</p>
+                <p class="mb-0">Get your API key at <a href="https://serpapi.com" target="_blank">serpapi.com</a> and add it in <a href="{{ url_for('settings.settings_page') }}">Settings</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

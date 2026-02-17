@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Search Results - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('search.search_page') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">Search Results</h4>
+    <span class="badge bg-secondary ms-2">{{ results|length }} found</span>
+</div>
+
+<p class="text-muted">
+    Query: "{{ query }}"
+    {% if source == 'serpapi' %}
+    <span class="badge bg-info ms-2">via SerpAPI</span>
+    {% else %}
+    <span class="badge bg-primary ms-2">via Google Custom Search</span>
+    {% endif %}
+</p>
+
+{% if results %}
+<form method="POST" action="{{ url_for('search.save_contacts') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="search_log_id" value="{{ search_log_id }}">
+    <input type="hidden" name="search_source" value="{{ source|default('google_search') }}">
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:40px">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Website</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr class="{{ 'table-warning' if r.is_duplicate else '' }}">
+                        <td>
+                            {% if not r.is_duplicate %}
+                            <input type="checkbox" name="selected" value="{{ loop.index0 }}"
+                                   class="form-check-input result-check">
+                            {% else %}
+                            <span class="text-muted" title="Duplicate"><i class="bi bi-check-circle"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="hidden" name="company_{{ loop.index0 }}" value="{{ r.company_name }}">
+                            <strong>{{ r.company_name|truncate(40) }}</strong>
+                            <div class="text-muted small">{{ r.snippet|truncate(80) }}</div>
+                        </td>
+                        <td>
+                            <input type="text" name="email_{{ loop.index0 }}" value="{{ r.email }}"
+                                   class="form-control form-control-sm" style="width:200px" placeholder="email">
+                            {% if r.emails|length > 1 %}
+                            <div class="text-muted small mt-1">Also: {{ r.emails[1:3]|join(', ') }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="text" name="phone_{{ loop.index0 }}" value="{{ r.phone }}"
+                                   class="form-control form-control-sm" style="width:140px" placeholder="phone">
+                        </td>
+                        <td>
+                            <input type="hidden" name="website_{{ loop.index0 }}" value="{{ r.website }}">
+                            <a href="{{ r.website }}" target="_blank" class="small">{{ r.website|truncate(30) }}</a>
+                        </td>
+                        <td>
+                            {% if r.is_duplicate %}
+                            <span class="badge bg-warning text-dark">Duplicate</span>
+                            {% else %}
+                            <span class="badge bg-success">New</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-save"></i> Save Selected Contacts
+    </button>
+    <a href="{{ url_for('search.search_page') }}" class="btn btn-outline-secondary ms-2">New Search</a>
+</form>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-search" style="font-size:3rem"></i>
+        <p class="mt-2">No results found. Try a different query.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#selectAll').on('change', function() {
+    $('.result-check').prop('checked', this.checked);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Brochures - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Brochures</h4>
+    <a href="{{ url_for('brochures.upload') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Upload Brochure
+    </a>
+</div>
+
+{% if brochures %}
+<div class="row g-3">
+    {% for b in brochures %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 {{ 'border-primary' if b.is_default else '' }}">
+            <div class="card-body text-center">
+                {% if b.file_type in ['png', 'jpg', 'jpeg'] %}
+                <img src="{{ url_for('brochures.serve_file', filename=b.stored_filename) }}"
+                     class="img-fluid rounded mb-2" style="max-height:150px" alt="{{ b.original_filename }}">
+                {% else %}
+                <div class="py-4 mb-2">
+                    <i class="bi bi-file-earmark-pdf text-danger" style="font-size:3rem"></i>
+                </div>
+                {% endif %}
+                <h6 class="card-title text-truncate" title="{{ b.original_filename }}">{{ b.original_filename }}</h6>
+                <p class="text-muted small mb-1">{{ (b.file_size / 1024)|round(1) }} KB</p>
+                {% if b.is_default %}
+                <span class="badge bg-primary mb-2">Default</span>
+                {% endif %}
+                {% if b.description %}
+                <p class="small text-muted">{{ b.description|truncate(60) }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{{ url_for('brochures.serve_file', filename=b.stored_filename) }}"
+                   class="btn btn-sm btn-outline-secondary" target="_blank">
+                    <i class="bi bi-eye"></i>
+                </a>
+                {% if not b.is_default %}
+                <form method="POST" action="{{ url_for('brochures.set_default', brochure_id=b.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-outline-primary" title="Set as default">
+                        <i class="bi bi-star"></i>
+                    </button>
+                </form>
+                {% endif %}
+                <form method="POST" action="{{ url_for('brochures.delete', brochure_id=b.id) }}" class="d-inline"
+                      onsubmit="return confirm('Delete this brochure?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-file-earmark-richtext" style="font-size:3rem"></i>
+        <p class="mt-2">No brochures uploaded yet.</p>
+        <a href="{{ url_for('brochures.upload') }}" class="btn btn-primary btn-sm">Upload Your First Brochure</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

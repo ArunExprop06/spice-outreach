@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}AI Analysis - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('ai_assistant.index') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0"><i class="bi bi-stars text-warning"></i> AI Analysis</h4>
+    <span class="badge bg-info ms-2">{{ product }}</span>
+</div>
+
+{% if analysis %}
+<div class="row g-3">
+    <!-- Market Rating Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-3">Market Potential Rating</h6>
+                {% set rating = analysis.market_rating|default(0) %}
+                {% set color = 'success' if rating >= 7 else 'warning' if rating >= 4 else 'danger' %}
+                <div class="display-1 fw-bold text-{{ color }}">{{ rating }}</div>
+                <div class="text-muted">/10</div>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-{{ color }}" style="width: {{ rating * 10 }}%"></div>
+                </div>
+                <p class="mt-3 small text-muted">{{ analysis.market_summary|default('') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strengths -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-check-circle text-success me-1"></i> Product Strengths</h6>
+            </div>
+            <div class="card-body">
+                {% for s in analysis.strengths|default([]) %}
+                <div class="d-flex align-items-start mb-2">
+                    <i class="bi bi-check2-circle text-success me-2 mt-1"></i>
+                    <span>{{ s }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Target Industries -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-building text-primary me-1"></i> Target Industries</h6>
+            </div>
+            <div class="card-body">
+                {% for ind in analysis.target_industries|default([]) %}
+                <span class="badge bg-primary bg-opacity-10 text-primary me-1 mb-1 p-2">{{ ind }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Improvement Suggestions -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-lightbulb text-warning me-1"></i> Improvement Suggestions</h6>
+            </div>
+            <div class="card-body">
+                {% for imp in analysis.improvements|default([]) %}
+                <div class="border-start border-3 border-warning ps-3 mb-3">
+                    <div class="fw-bold">{{ imp.title }}</div>
+                    <div class="text-muted small">{{ imp.detail }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Search Queries -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-search text-info me-1"></i> Lead-Finding Search Queries</h6>
+            </div>
+            <div class="card-body">
+                {% for q in analysis.lead_search_queries|default([]) %}
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                    <span class="small">{{ q }}</span>
+                    <a href="{{ url_for('search.search_page') }}?q={{ q|urlencode }}"
+                       class="btn btn-sm btn-outline-primary ms-2" title="Search for leads">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                <div class="text-muted small mt-2">
+                    <i class="bi bi-info-circle me-1"></i> Click the arrow to use this query in Find Contacts.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Pitch -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-envelope text-danger me-1"></i> Cold Email Pitch</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyPitch()">
+                    <i class="bi bi-clipboard"></i> Copy
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="emailPitch" class="bg-light p-3 rounded small" style="white-space: pre-wrap;">{{ analysis.email_pitch|default('') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Insight -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-currency-rupee text-success me-1"></i> Pricing Insight</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ analysis.pricing_insight|default('') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('ai_assistant.index') }}" class="btn btn-primary">
+        <i class="bi bi-stars me-1"></i> Analyze Another Product
+    </a>
+    <a href="{{ url_for('search.search_page') }}" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-search me-1"></i> Go to Find Contacts
+    </a>
+</div>
+
+{% elif raw_response %}
+<!-- Fallback if JSON parsing failed -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h6 class="mb-0">AI Response (raw)</h6>
+    </div>
+    <div class="card-body">
+        <pre class="mb-0" style="white-space: pre-wrap;">{{ raw_response }}</pre>
+    </div>
+</div>
+<a href="{{ url_for('ai_assistant.index') }}" class="btn btn-primary mt-3">Try Again</a>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-exclamation-circle" style="font-size:3rem"></i>
+        <p class="mt-2">No analysis available. Try again.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyPitch() {
+    const text = document.getElementById('emailPitch').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Email pitch copied!', 'success');
+    });
+}
+</script>
+{% endblock %}

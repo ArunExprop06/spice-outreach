@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Find Contacts - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Find Contacts</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('search.run_search') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Search Query</label>
+                        <input type="text" name="query" class="form-control" id="searchQuery"
+                               value="{{ request.args.get('q', '') }}"
+                               placeholder="e.g., poultry suppliers India contact email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Search Engine</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search_engine"
+                                       id="engineSerpapi" value="serpapi"
+                                       {{ 'checked' if has_serpapi else '' }}
+                                       {{ '' if has_serpapi else 'disabled' }}>
+                                <label class="form-check-label" for="engineSerpapi">
+                                    SerpAPI
+                                    {% if has_serpapi %}
+                                    <span class="badge bg-success ms-1">Ready</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary ms-1">Not configured</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search_engine"
+                                       id="engineGoogle" value="google"
+                                       {{ 'checked' if not has_serpapi and has_google else '' }}
+                                       {{ '' if has_google else 'disabled' }}>
+                                <label class="form-check-label" for="engineGoogle">
+                                    Google Custom Search
+                                    {% if has_google %}
+                                    <span class="badge bg-success ms-1">Ready</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary ms-1">Not configured</span>
+                                    {% endif %}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quick Templates</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for t in templates %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary template-btn"
+                                    data-query="{{ t }}">{{ t|truncate(35) }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Recent Searches</h6>
+            </div>
+            <div class="card-body">
+                {% for s in recent_searches %}
+                <div class="mb-2">
+                    <div class="small fw-bold">{{ s.query|truncate(40) }}</div>
+                    <div class="text-muted small">{{ s.results_count }} results, {{ s.contacts_saved }} saved | {{ s.created_at.strftime('%m/%d %H:%M') }}</div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No searches yet</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('.template-btn').on('click', function() {
+    $('#searchQuery').val($(this).data('query'));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Facebook Results - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('facebook.search') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">Facebook Search Results</h4>
+    <span class="badge bg-secondary ms-2">{{ results|length }} found</span>
+</div>
+
+<p class="text-muted">Search: "{{ query }}"</p>
+
+{% if results %}
+<form method="POST" action="{{ url_for('facebook.save_leads') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="card mb-3">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:40px">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th>Name</th>
+                        <th>Comment / Post</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr class="{{ 'table-success' if r.is_enquiry else '' }} {{ 'table-warning' if r.is_duplicate else '' }}">
+                        <td>
+                            {% if not r.is_duplicate %}
+                            <input type="checkbox" name="selected" value="{{ loop.index0 }}"
+                                   class="form-check-input result-check"
+                                   {{ 'checked' if r.is_enquiry else '' }}>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-check-circle"></i></span>
+                            {% endif %}
+                            <input type="hidden" name="name_{{ loop.index0 }}" value="{{ r.name }}">
+                            <input type="hidden" name="text_{{ loop.index0 }}" value="{{ r.text[:500] }}">
+                            <input type="hidden" name="source_{{ loop.index0 }}" value="{{ r.source }}">
+                        </td>
+                        <td><strong>{{ r.name }}</strong></td>
+                        <td>
+                            <div class="small" style="max-width:300px">{{ r.text|truncate(120) }}</div>
+                        </td>
+                        <td>
+                            <input type="text" name="phone_{{ loop.index0 }}" value="{{ r.phone }}"
+                                   class="form-control form-control-sm" style="width:140px" placeholder="phone">
+                            {% if r.phones|length > 1 %}
+                            <div class="text-muted small mt-1">Also: {{ r.phones[1:]|join(', ') }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <input type="text" name="email_{{ loop.index0 }}" value="{{ r.email }}"
+                                   class="form-control form-control-sm" style="width:180px" placeholder="email">
+                        </td>
+                        <td>
+                            {% if r.is_duplicate %}
+                            <span class="badge bg-warning text-dark">Exists</span>
+                            {% elif r.is_enquiry %}
+                            <span class="badge bg-success">Enquiry</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Post</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-save"></i> Save Selected Leads
+    </button>
+    <a href="{{ url_for('facebook.search') }}" class="btn btn-outline-secondary ms-2">New Search</a>
+</form>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-facebook" style="font-size:3rem"></i>
+        <p class="mt-2">No results found for "{{ query }}". Try a different keyword.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#selectAll').on('change', function() {
+    $('.result-check').prop('checked', this.checked);
+});
+</script>
+{% endblock %}

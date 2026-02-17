@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% block title %}Discover Pages & Groups - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('facebook.dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h4 class="mb-0"><i class="bi bi-compass text-primary"></i> Discover Pages & Groups</h4>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('facebook.search') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-hash"></i> Keyword Search
+        </a>
+        <a href="{{ url_for('facebook.my_groups') }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-people-fill"></i> My Groups
+        </a>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="row g-3 mb-4">
+    <!-- Search Pages -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-flag"></i> Find Pages</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Search Facebook for pages related to your industry keywords.</p>
+                <form method="POST" action="{{ url_for('facebook.discover_pages') }}" class="d-flex gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="keyword" class="form-control form-control-sm"
+                           placeholder="e.g., poultry farm India, spice exporter" required>
+                    <button class="btn btn-primary btn-sm text-nowrap">
+                        <i class="bi bi-search"></i> Find Pages
+                    </button>
+                </form>
+                <div class="mt-2 d-flex flex-wrap gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary page-tag" data-query="poultry farm">poultry farm</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary page-tag" data-query="spice exporter">spice exporter</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary page-tag" data-query="wholesale supplier">wholesale supplier</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary page-tag" data-query="manufacturer India">manufacturer India</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Groups -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-people"></i> Find Groups</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Search for Facebook groups where potential leads post enquiries.</p>
+                <form method="POST" action="{{ url_for('facebook.discover_groups') }}" class="d-flex gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="keyword" class="form-control form-control-sm"
+                           placeholder="e.g., poultry business, bulk buyers" required>
+                    <button class="btn btn-success btn-sm text-nowrap">
+                        <i class="bi bi-search"></i> Find Groups
+                    </button>
+                </form>
+                <div class="mt-2 d-flex flex-wrap gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary group-tag" data-query="poultry business">poultry business</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary group-tag" data-query="B2B India">B2B India</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary group-tag" data-query="wholesale market">wholesale market</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary group-tag" data-query="buy sell trade">buy sell trade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Discovery Results -->
+{% if results is defined and results %}
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="bi bi-{{ 'flag' if search_type == 'pages' else 'people' }}"></i>
+            Results for "{{ search_keyword }}"
+        </h6>
+        <span class="badge bg-primary">{{ results|length }} found</span>
+    </div>
+    <div class="card-body p-0">
+        <form method="POST" action="{{ url_for('facebook.save_multiple_sources') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="search_keyword" value="{{ search_keyword }}">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:40px">
+                            <input type="checkbox" id="selectAllResults" class="form-check-input">
+                        </th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>{% if search_type == 'pages' %}Followers{% else %}Members{% endif %}</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr class="{{ 'table-success' if r.already_saved else '' }}">
+                        <td>
+                            {% if not r.already_saved %}
+                            <input type="checkbox" name="selected" value="{{ loop.index0 }}"
+                                   class="form-check-input result-check">
+                            {% else %}
+                            <i class="bi bi-check-circle text-success"></i>
+                            {% endif %}
+                            <input type="hidden" name="fb_id_{{ loop.index0 }}" value="{{ r.fb_id }}">
+                            <input type="hidden" name="name_{{ loop.index0 }}" value="{{ r.name }}">
+                            <input type="hidden" name="type_{{ loop.index0 }}" value="{{ r.type }}">
+                            <input type="hidden" name="category_{{ loop.index0 }}" value="{{ r.category }}">
+                            <input type="hidden" name="member_count_{{ loop.index0 }}" value="{{ r.member_count|default(0) }}">
+                            <input type="hidden" name="fan_count_{{ loop.index0 }}" value="{{ r.fan_count|default(0) }}">
+                            <input type="hidden" name="about_{{ loop.index0 }}" value="{{ r.about }}">
+                        </td>
+                        <td>
+                            <strong>{{ r.name }}</strong>
+                            {% if r.type == 'page' %}
+                            <span class="badge bg-primary ms-1">Page</span>
+                            {% else %}
+                            <span class="badge bg-success ms-1">Group</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ r.category }}</td>
+                        <td>
+                            {% if r.type == 'page' and r.fan_count %}
+                            {{ "{:,}".format(r.fan_count) }}
+                            {% elif r.member_count %}
+                            {{ "{:,}".format(r.member_count) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted" style="max-width:250px">{{ r.about|truncate(100) if r.about else '-' }}</td>
+                        <td>
+                            {% if r.already_saved %}
+                            <span class="text-success small">Saved</span>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('facebook.save_source') }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="fb_id" value="{{ r.fb_id }}">
+                                <input type="hidden" name="name" value="{{ r.name }}">
+                                <input type="hidden" name="source_type" value="{{ r.type }}">
+                                <input type="hidden" name="category" value="{{ r.category }}">
+                                <input type="hidden" name="member_count" value="{{ r.member_count|default(0) }}">
+                                <input type="hidden" name="fan_count" value="{{ r.fan_count|default(0) }}">
+                                <input type="hidden" name="about" value="{{ r.about }}">
+                                <input type="hidden" name="keyword" value="{{ search_keyword }}">
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus"></i> Save
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="p-3">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-save"></i> Save Selected Sources
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% elif results is defined and not results %}
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i> No results found for "{{ search_keyword }}". Try different keywords.
+</div>
+{% endif %}
+
+<!-- Saved Sources -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-bookmark-star"></i> Saved Sources</h6>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary">{{ saved_sources|length }} sources</span>
+            {% if saved_sources %}
+            <form method="POST" action="{{ url_for('facebook.scan_all_sources') }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-repeat"></i> Scan All Sources
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if saved_sources %}
+        <table class="table table-hover mb-0" id="sourcesTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Size</th>
+                    <th>Leads Found</th>
+                    <th>Last Scanned</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in saved_sources %}
+                <tr class="{{ '' if s.is_active else 'table-secondary' }}">
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>
+                        {% if s.source_type == 'page' %}
+                        <span class="badge bg-primary">Page</span>
+                        {% else %}
+                        <span class="badge bg-success">Group</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ s.category or '-' }}</td>
+                    <td class="small">
+                        {% if s.source_type == 'page' and s.fan_count %}
+                        {{ "{:,}".format(s.fan_count) }} followers
+                        {% elif s.member_count %}
+                        {{ "{:,}".format(s.member_count) }} members
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.leads_found > 0 %}
+                        <span class="badge bg-info">{{ s.leads_found }}</span>
+                        {% else %}
+                        <span class="text-muted">0</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">
+                        {{ s.last_scanned.strftime('%Y-%m-%d %H:%M') if s.last_scanned else 'Never' }}
+                    </td>
+                    <td>
+                        {% if s.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Paused</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <form method="POST" action="{{ url_for('facebook.scan_source', source_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-primary" title="Scan now">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('facebook.toggle_source', source_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-{{ 'warning' if s.is_active else 'success' }}"
+                                        title="{{ 'Pause' if s.is_active else 'Activate' }}">
+                                    <i class="bi bi-{{ 'pause' if s.is_active else 'play' }}"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('facebook.remove_source', source_id=s.id) }}" class="d-inline"
+                                  onsubmit="return confirm('Remove this source?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-danger" title="Remove">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-compass" style="font-size:3rem"></i>
+            <p class="mt-2">No saved sources yet. Search for pages or groups above, or click "My Groups" to auto-find your groups.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="card mt-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-info-circle"></i> How Discovery Works</h6>
+    </div>
+    <div class="card-body small">
+        <div class="row">
+            <div class="col-md-4">
+                <h6>1. Discover</h6>
+                <p class="text-muted">Search for Facebook pages and groups related to your business keywords (poultry, spices, etc.)</p>
+            </div>
+            <div class="col-md-4">
+                <h6>2. Save Sources</h6>
+                <p class="text-muted">Save relevant pages and groups. They'll be scanned for enquiries automatically.</p>
+            </div>
+            <div class="col-md-4">
+                <h6>3. Auto-Scan</h6>
+                <p class="text-muted">The app reads posts and comments from all saved sources, finds enquiries, and extracts contact info.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#sourcesTable tbody tr').length > 1) {
+        $('#sourcesTable').DataTable({ pageLength: 25, order: [[5, 'desc']] });
+    }
+
+    // Select all results checkbox
+    $('#selectAllResults').on('change', function() {
+        $('.result-check').prop('checked', this.checked);
+    });
+
+    // Quick tag buttons for page search
+    $('.page-tag').on('click', function() {
+        $(this).closest('.card-body').find('input[name="keyword"]').val($(this).data('query'));
+    });
+    // Quick tag buttons for group search
+    $('.group-tag').on('click', function() {
+        $(this).closest('.card-body').find('input[name="keyword"]').val($(this).data('query'));
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Jobs: {{ tracker.search_query }} — Job Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('job_tracker.dashboard') }}" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h3 class="mb-0">{{ tracker.search_query }}</h3>
+            <small class="text-muted">
+                {{ tracker.city }} &middot; {{ tracker.category }}
+                {% if tracker.job_type %} &middot; {{ tracker.job_type }}{% endif %}
+                &middot;
+                {% if tracker.last_checked %}
+                Last checked {{ tracker.last_checked.strftime('%d %b %Y, %I:%M %p') }}
+                {% else %}
+                Never checked
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    <form method="post" action="{{ url_for('job_tracker.check_single', tracker_id=tracker.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i> Check Now
+        </button>
+    </form>
+</div>
+
+{% if listings.items %}
+<div class="row g-3">
+    {% for listing in listings.items %}
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    {% if listing.platform == 'linkedin' %}
+                    <span class="badge bg-primary">LinkedIn</span>
+                    {% elif listing.platform == 'foundit' %}
+                    <span class="badge bg-success">Foundit</span>
+                    {% elif listing.platform == 'naukri' %}
+                    <span class="badge bg-danger">Naukri</span>
+                    {% elif listing.platform == 'facebook' %}
+                    <span class="badge bg-primary">Facebook</span>
+                    {% elif listing.platform == 'instagram' %}
+                    <span class="badge" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)">Instagram</span>
+                    {% elif listing.platform == 'twitter' %}
+                    <span class="badge bg-dark">Twitter / X</span>
+                    {% elif listing.platform == 'google_jobs' %}
+                    <span class="badge bg-warning text-dark">Google Jobs</span>
+                    {% else %}
+                    <span class="badge bg-info">{{ listing.platform | upper }}</span>
+                    {% endif %}
+                    <div>
+                        {% if listing.is_new %}
+                        <span class="badge bg-danger">NEW</span>
+                        {% endif %}
+                        {% if listing.posted_date %}
+                        <small class="text-muted ms-1">{{ listing.posted_date }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <h6 class="card-title mb-1">{{ listing.title }}</h6>
+                {% if listing.company %}
+                <p class="text-primary fw-semibold mb-1"><i class="bi bi-building me-1"></i>{{ listing.company }}</p>
+                {% endif %}
+                {% if listing.location %}
+                <p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>{{ listing.location }}</p>
+                {% endif %}
+                {% if listing.salary %}
+                <p class="text-success small mb-1"><i class="bi bi-cash me-1"></i>{{ listing.salary }}</p>
+                {% endif %}
+                {% if listing.experience %}
+                <p class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>{{ listing.experience }}</p>
+                {% endif %}
+                {% if listing.description %}
+                <p class="small text-muted mb-2">{{ listing.description[:200] }}{% if listing.description|length > 200 %}...{% endif %}</p>
+                {% endif %}
+                <small class="text-muted">Found {{ listing.found_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+            </div>
+            {% if listing.url %}
+            <div class="card-footer bg-transparent">
+                <a href="{{ listing.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> View on {{ {'linkedin':'LinkedIn','foundit':'Foundit','naukri':'Naukri','facebook':'Facebook','instagram':'Instagram','twitter':'Twitter / X','google_jobs':'Google Jobs'}.get(listing.platform, listing.platform|upper) }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if listings.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not listings.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('job_tracker.results', tracker_id=tracker.id, page=listings.prev_num) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% for p in listings.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {% if p == listings.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('job_tracker.results', tracker_id=tracker.id, page=p) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not listings.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('job_tracker.results', tracker_id=tracker.id, page=listings.next_num) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <h5 class="mt-3">No jobs found yet</h5>
+        <p class="text-muted">Click "Check Now" to search job portals for "{{ tracker.search_query }}".</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

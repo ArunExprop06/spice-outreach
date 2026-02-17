@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Facebook Search - Krawlr{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('facebook.dashboard') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0"><i class="bi bi-hash text-primary"></i> Facebook Hashtag Search</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Search Keyword or Hashtag</label>
+                        <input type="text" name="query" class="form-control" id="searchQuery"
+                               placeholder="e.g., #spiceexporter or poultry supplier" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quick Tags</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#spices">#spices</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#poultry">#poultry</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#manufacturer">#manufacturer</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#wholesale">#wholesale</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#exporter">#exporter</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="#supplier">#supplier</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="bulk order">bulk order</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="looking for supplier">looking for supplier</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary tag-btn" data-query="need quote">need quote</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">How It Works</h6>
+            </div>
+            <div class="card-body small">
+                <ol class="mb-0">
+                    <li class="mb-2">Enter a keyword or hashtag</li>
+                    <li class="mb-2">We scan your page, groups, and all saved sources</li>
+                    <li class="mb-2">Enquiries are highlighted with contact info extracted</li>
+                    <li class="mb-2">Select and save leads to your contacts</li>
+                </ol>
+                <hr>
+                <p class="mb-0 text-muted">Tip: <a href="{{ url_for('facebook.discover') }}">Discover more pages/groups</a> to expand your search reach.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('.tag-btn').on('click', function() {
+    $('#searchQuery').val($(this).data('query'));
+});
+</script>
+{% endblock %}
